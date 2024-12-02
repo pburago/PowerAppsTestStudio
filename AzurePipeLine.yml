@@ -1,79 +1,49 @@
-# File: azure-pipelines.yml
-# Build Name / Format
-name: PowerAppsTestStudio-$(date:yyyyMMdd)$(rev:.r)
+trigger:
+  branches:
+    include:
+      - main  # Trigger on push to the main branch or adjust as needed
 
-resources:
-  repositories:
-    - repository: PowerAppsTestStudio
-      type: github
-      # GitHub Repo(e.g. <FORK>/PowerAppsTestStudio)
-      # Recommended to Fork or Duplicate if custom auth flows are required
-      name: microsoft/PowerAppsTestStudio
-      ref: master
-      # Name of the GitHub OAuth ADO Service Connection
-      endpoint: github.com_pburago
+pool:
+  vmImage: 'windows-latest'  # Use a Windows agent for Test Studio integration
 
-parameters:
- - name: image
-   displayName: Pool Image
-   type: string
-   # See https://github.com/MicrosoftDocs/azure-devops-docs/blob/master/docs/pipelines/agents/hosted.md#use-a-microsoft-hosted-agent for more pool types
-   default: windows-latest
-   values:
-   - windows-latest
-   - vs2017-win2016
-   - windows-2019
- - name: BrowserType
-   displayName: Browser Type
-   type: string
-   default: All
-   values:
-   - Chrome
-   - Firefox
-   - All
- - name: LoginMethod
-   displayName: Login Type # See: https://docs.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/user-account-management
-   type: string
-   default: CloudIdentity
-   values:
-   - CloudIdentity # Uses the default Office 365 Sign-In Service for authentication
-   - FederatedIdentity # Uses a Custom Login Action method using AD FS 2.0 or other Security Token Services for authentication. Custom code is required.
-   - PassThrough # Federated login scenario where the provided user credential is automatically logged in, requires special agent configurations
+variables:
+  solutionName: 'AdmiralPowerApps'
+  testStudioPath: 'C:\\Program Files (x86)\\Test Studio\\Bin'  # Update based on Test Studio installation location
+  testResultsPath: '$(Build.ArtifactStagingDirectory)\\TestResults'  # Path to store test results
 
-jobs:
-- job: "PowerAppsTestStudio"
-  pool:
-    vmImage: ${{ parameters.image }}
-    demands:
-    - msbuild
-    - visualstudio
-    - vstest
-  variables:
-  - name: PortalUrl
-    value: https://make.powerapps.com
-    # Browser PrivateMode usage (true/false)
-  - name: PrivateMode
-    value: true
-    # FileName where TestAutomationURLs are stored in JSON format
-  - name: TestUrlFileName 
-    value: TestURLs.json
-    # Project name of repo containing TestAutomationURLs (spaces should be encoded as %20)
-    # Example: Contoso Test Framework --> Contoso%20Test%20Framework
-  - name: LocalProjectName
-    value: PowerAppsTestStudio
+steps:
 
-  steps:
-  - checkout: self
-  - checkout: PowerAppsTestStudio
-  #- template: localsteps.yml # Provide optional local YAML template here
-  - template: frameworksteps.yml@PowerAppsTestStudio
-    parameters:
-      OnlineUsername: $(OnlineUsername)
-      OnlinePassword: $(OnlinePassword)
-      OnlineUrl: $(PortalUrl)
-      BrowserType: ${{ parameters.BrowserType }}
-      # File location format is /s/TeamProjectName/FilePathToTestAutomationURLs.json
-      TestAutomationURLFilePath:  $(Build.SourcesDirectory)\$(LocalProjectName)\$(TestUrlFileName)
-      # $(Build.SourcesDirectory)\$(LocalProjectName)\$(TestUrlFileName)
-      UsePrivateMode: $(PrivateMode)
-      LoginMethod: ${{ parameters.LoginMethod }}
+# Checkout the code from the repository
+- task: Checkout@1
+  displayName: 'Checkout code'
+
+# Install necessary dependencies if any (PowerApps Build Tools, etc.)
+- task: UseDotNet@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '6.x'
+
+# Build your PowerApps solution (replace with your actual build command)
+- task: PowerAppsBuild@0
+  displayName: 'Build PowerApps solution'
+  inputs:
+    solutionFile: '**/*.msapp'  # Use the correct path to your PowerApps solution file
+
+# Set up Test Studio to run tests
+- task: UseTestStudio@1
+  displayName: 'Run Test Studio Tests'
+  inputs:
+    testStudioExecutablePath: '$(testStudioPath)\\TestStudio.exe'
+    solutionPath: '$(Build.SourcesDirectory)\\$(solutionName)'  # Path to your solution
+    testResultsDirectory: '$(testResultsPath)'  # Path where results will be saved
+    testCategory: 'All'  # Adjust this to target specific test categories if needed
+
+# Publish the test results (if Test Studio generates a report in a compatible format)
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFiles: '$(testResultsPath)\\*.xml'  # Path to the generated test results (assumes XML format)
+    testRunTitle: 'Test Studio Test Run'
+    mergeTestResults: true
+    failTaskOnFailedTests: true
