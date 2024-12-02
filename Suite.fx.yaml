@@ -1,0 +1,50 @@
+testSuite:
+  testSuiteName: Suite
+  testSuiteDescription: Customer Data App Suite
+  persona: User1
+  appLogicalName: ''
+  appId: 56b9c5ca-32ee-4535-af9e-c1793f58e5d7
+  onTestCaseStart: ""
+  onTestCaseComplete: "= \nPatch('Test Case data',Defaults('Test Case data'),{\r\n    'Test Case Id':TestCaseResult.TestCaseId,\r\n    'Stat Time':TestCaseResult.StartTime,\r\n    'End Time':TestCaseResult.EndTime,\r\n    Success:TestCaseResult.Success,\r\n    'TestCase Name':TestCaseResult.TestCaseName,\r\n    'Test Suite ID':TestCaseResult.TestSuiteId,\r\n    'Test Suite Name':TestCaseResult.TestSuiteName,'Test Failure Message':TestCaseResult.TestFailureMessage\r\n    \r\n    \r\n\r\n})\r\n;\n"
+  onTestSuiteComplete: |
+    = 
+    Patch('TestSuite Data',Defaults('TestSuite Data'),{'Test Suite ID':TestSuiteResult.TestSuiteId,'Start Time':TestSuiteResult.StartTime,'End Time':TestSuiteResult.EndTime,'Test Suite Name':TestSuiteResult.TestSuiteName,
+    'Tests Failed':TestSuiteResult.TestsFailed,'Tests Passed':TestSuiteResult.TestsPassed});
+  networkRequestMocks: 
+  testCases:
+  - testCaseName: PositiveScenario Test Case
+    testCaseDescription: Customer data verification Case
+    testSteps: |
+      = 
+      SetProperty('TextInput1'.Text, "test");
+      SetProperty('TextInput1_1'.Text, "user");
+      SetProperty('TextInput1_2'.Text, "testuser1@gmail.com");
+      Select('Button1');
+      Select('Label4');
+  - testCaseName: NegativeScenario Test Case
+    testCaseDescription: Customer data verification Case
+    testSteps: |
+      = 
+      SetProperty('TextInput1'.Text, "test");
+      SetProperty('TextInput1_1'.Text, "user");
+      SetProperty('TextInput1_2'.Text, "testuser1@gmail.com");
+      Select('Button1');
+      Select('Label4');
+testSettings:
+  filePath: 
+  browserConfigurations:
+  - browser: Chromium
+    device: 
+    screenWidth: 0
+    screenHeight: 0
+  locale: en-US
+  recordVideo: true
+  headless: true
+  enablePowerFxOverlay: false
+  timeout: 30000
+environmentVariables:
+  filePath: 
+  users:
+  - personaName: User1
+    emailKey: user1Email
+    passwordKey: user1Password
