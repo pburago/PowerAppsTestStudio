@@ -11,7 +11,7 @@ resources:
       name: microsoft/PowerAppsTestStudio
       ref: master
       # Name of the GitHub OAuth ADO Service Connection
-      endpoint: <ADO GitHub OAuth Service Connection Name>
+      endpoint: github.com_pburago
 
 parameters:
  - name: image
@@ -41,7 +41,7 @@ parameters:
    - PassThrough # Federated login scenario where the provided user credential is automatically logged in, requires special agent configurations
 
 jobs:
-- job: "PowerAppsTestFrameworkAutomation"
+- job: "PowerAppsTestStudio"
   pool:
     vmImage: ${{ parameters.image }}
     demands:
@@ -56,10 +56,10 @@ jobs:
     value: true
     # FileName where TestAutomationURLs are stored in JSON format
   - name: TestUrlFileName 
-    value: TestAutomationURLs.json
+    value: TestURLs.json
     # Project name of repo containing TestAutomationURLs (spaces should be encoded as %20)
     # Example: Contoso Test Framework --> Contoso%20Test%20Framework
-  - name: LocalProjectName
+  - name: PowerAppsTestStudio
     value: PowerAppsTestStudio
 
   steps:
@@ -73,6 +73,6 @@ jobs:
       OnlineUrl: $(PortalUrl)
       BrowserType: ${{ parameters.BrowserType }}
       # File location format is /s/TeamProjectName/FilePathToTestAutomationURLs.json
-      TestAutomationURLFilePath: $(Build.SourcesDirectory)\$(LocalProjectName)\Samples\$(TestUrlFileName)
+      TestAutomationURLFilePath: $(Build.SourcesDirectory)\$(LocalProjectName)\$(TestUrlFileName)
       UsePrivateMode: $(PrivateMode)
       LoginMethod: ${{ parameters.LoginMethod }}
